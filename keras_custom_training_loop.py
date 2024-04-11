@@ -19,11 +19,21 @@ def get_model():
 
 
 def compute_loss_and_updates(trainable_variables, non_trainable_variables, metric_variables, x, y):
-    y_pred, non_trainable_variables = model.stateless_call(trainable_variables, non_trainable_variables, x)
+    y_pred, non_trainable_variables, losses = model.stateless_call(
+        trainable_variables,
+        non_trainable_variables,
+        x,
+        return_losses=True,
+    )
+
     loss = loss_fn(y, y_pred)
 
+    if losses:
+        loss += jax.numpy.sum(losses)
+
     metric_variables = train_acc_metric.stateless_update_state(metric_variables, y, y_pred)
-    return loss, (non_trainable_variables, metric_variables)
+
+    return loss, non_trainable_variables, metric_variables
 
 
 @jax.jit
